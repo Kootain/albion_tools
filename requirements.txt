@@ -1,0 +1,8 @@
+PySide6
+pywin32
+pcapy-ng
+pydantic
+ipdb
+opencv-python
+numpy
+rapidocr-onnxruntime
