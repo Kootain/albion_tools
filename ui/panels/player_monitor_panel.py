@@ -6,77 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QEvent, QSize, QTimer
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QPalette, QColor, QFont
-import ctypes
-from ctypes import wintypes
-import time
-
-# --- Input Simulation Helpers (Windows) ---
-user32 = ctypes.WinDLL('user32', use_last_error=True)
-INPUT_KEYBOARD = 1
-KEYEVENTF_EXTENDEDKEY = 0x0001
-KEYEVENTF_KEYUP = 0x0002
-KEYEVENTF_SCANCODE = 0x0008
-
-wintypes.ULONG_PTR = wintypes.WPARAM
-
-class MOUSEINPUT(ctypes.Structure):
-    _fields_ = (("dx", wintypes.LONG),
-                ("dy", wintypes.LONG),
-                ("mouseData", wintypes.DWORD),
-                ("dwFlags", wintypes.DWORD),
-                ("time", wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
-
-class KEYBDINPUT(ctypes.Structure):
-    _fields_ = (("wVk", wintypes.WORD),
-                ("wScan", wintypes.WORD),
-                ("dwFlags", wintypes.DWORD),
-                ("time", wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
-
-class HARDWAREINPUT(ctypes.Structure):
-    _fields_ = (("uMsg", wintypes.DWORD),
-                ("wParamL", wintypes.WORD),
-                ("wParamH", wintypes.WORD))
-
-class INPUT(ctypes.Structure):
-    class _INPUT(ctypes.Union):
-        _fields_ = (("mi", MOUSEINPUT),
-                    ("ki", KEYBDINPUT),
-                    ("hi", HARDWAREINPUT))
-    _anonymous_ = ("_input",)
-    _fields_ = (("type", wintypes.DWORD),
-                ("_input", _INPUT))
-
-LPINPUT = ctypes.POINTER(INPUT)
-
-def _send_key(hexKeyCode):
-    x = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=hexKeyCode))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
-
-def _send_key_release(hexKeyCode):
-    x = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=hexKeyCode, dwFlags=KEYEVENTF_KEYUP))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
-
-def press_key(key_char):
-    # Basic mapping for chars to VK codes
-    # This is simplified. 
-    vk = 0
-    key_char = key_char.upper()
-    if len(key_char) == 1:
-        vk = ord(key_char) # Works for A-Z, 0-9
-    else:
-        # Handle special keys if needed, or mapping dict
-        mapping = {
-            "F1": 0x70, "F2": 0x71, "F3": 0x72, "F4": 0x73, "F5": 0x74, "F6": 0x75,
-            "SPACE": 0x20, "ENTER": 0x0D, "SHIFT": 0x10, "CTRL": 0x11, "ALT": 0x12
-        }
-        vk = mapping.get(key_char, 0)
-    
-    if vk:
-        _send_key(vk)
-        time.sleep(0.05)
-        _send_key_release(vk)
+from ui.platform_utils import press_key
 
 class AutoCastConfigDialog(QDialog):
     def __init__(self, config=None, parent=None):

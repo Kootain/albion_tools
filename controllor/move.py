@@ -1,18 +1,17 @@
-import win32api
-import win32con
 import time
 import math
+from ui import platform_utils
 
 class KeyboardController:
     """
     Simulates keyboard input for character movement based on configurable keys.
     """
     def __init__(self, up: str = 'E', down: str = 'D', left: str = 'S', right: str = 'F', duration_scale: float = 1.0, rotation_angle: float = 0):
-        # Convert characters to virtual key codes
-        self.up = ord(up.upper())
-        self.down = ord(down.upper())
-        self.left = ord(left.upper())
-        self.right = ord(right.upper())
+        # Store keys as characters
+        self.up = up.upper()
+        self.down = down.upper()
+        self.left = left.upper()
+        self.right = right.upper()
         
         self.duration_scale = duration_scale
         self.rotation_radians = math.radians(rotation_angle)
@@ -20,15 +19,15 @@ class KeyboardController:
         # Track currently pressed keys to avoid redundant API calls
         self.pressed_keys = set()
 
-    def _press_key(self, hex_key_code):
-        if hex_key_code not in self.pressed_keys:
-            win32api.keybd_event(hex_key_code, 0, 0, 0)
-            self.pressed_keys.add(hex_key_code)
+    def _press_key(self, key_char):
+        if key_char not in self.pressed_keys:
+            platform_utils.key_down(key_char)
+            self.pressed_keys.add(key_char)
 
-    def _release_key(self, hex_key_code):
-        if hex_key_code in self.pressed_keys:
-            win32api.keybd_event(hex_key_code, 0, win32con.KEYEVENTF_KEYUP, 0)
-            self.pressed_keys.remove(hex_key_code)
+    def _release_key(self, key_char):
+        if key_char in self.pressed_keys:
+            platform_utils.key_up(key_char)
+            self.pressed_keys.remove(key_char)
 
     def move(self, x: float, y: float, threshold: float = 0.01):
         """

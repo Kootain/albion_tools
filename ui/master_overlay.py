@@ -2,9 +2,8 @@
 
 from PySide6.QtWidgets import QMainWindow, QWidget
 from PySide6.QtCore import Qt, QTimer, QPoint, Signal
-import win32gui
-import win32con
 from ui.draggable_container import DraggableContainer
+from ui import platform_utils
 
 class MasterOverlay(QMainWindow):
     # 信号：通知 ControlDashboard 模式已更改
@@ -63,32 +62,18 @@ class MasterOverlay(QMainWindow):
 
     def update_overlay_position(self):
         """窗体跟随逻辑 (P0.4)"""
-        hwnd = win32gui.FindWindow(None, self.target_title) 
+        rect = platform_utils.get_target_window_rect(self.target_title)
         
-        if hwnd:
-            rect = win32gui.GetWindowRect(hwnd) 
-            x, y, x2, y2 = rect
-            width = x2 - x
-            height = y2 - y
-            
+        if rect:
+            x, y, width, height = rect
             self.setGeometry(x, y, width, height)
             self.show()
         else:
             self.hide()
             
     def set_click_through(self, enable):
-        """Win32 鼠标穿透逻辑 (P0.3)"""
-        hwnd = self.winId().__int__()
-        styles = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-        
-        if enable:
-            new_styles = styles | win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED
-            self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        else:
-            new_styles = styles & ~win32con.WS_EX_TRANSPARENT
-            self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-            
-        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_styles)
+        """鼠标穿透逻辑 (支持 Windows 和 macOS)"""
+        platform_utils.set_click_through(self, enable)
         
     def toggle_edit_mode(self):
         """切换编辑模式 (P2.5)"""

@@ -10,7 +10,7 @@ class UdpSocketProvider(PacketProvider):
     通过标准 Socket 监听本地端口，接收来自 Go Sniffer 转发的数据包
     """
     
-    def __init__(self, signal: RawPacketSignal, target_ports: Optional[List[int]] = None, listening_port: int = 44444):
+    def __init__(self, signal: RawPacketSignal, target_ports: Optional[List[int]] = None, listening_port: int = 44444, host: str = '0.0.0.0'):
         super().__init__(signal)
         # target_ports 在这里不用于监听，仅作为参考或逻辑兼容
         self.listening_port = listening_port
@@ -18,6 +18,7 @@ class UdpSocketProvider(PacketProvider):
         self._thread: Optional[Thread] = None
         self._stop_event = Event()
         self._socket: Optional[socket.socket] = None
+        self._host = host
         
     def start(self) -> bool:
         if self._is_running:
@@ -29,10 +30,10 @@ class UdpSocketProvider(PacketProvider):
             # 创建单一接收 Socket
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             # 绑定到本地环回地址，接收 Go Sniffer 转发的数据
-            sock.bind(('127.0.0.1', self.listening_port))
+            sock.bind((self._host, self.listening_port))
             sock.settimeout(1.0) # 设置超时，以便线程可以响应停止信号
             self._socket = sock
-            print(f"[UdpSocketProvider] 正在监听 127.0.0.1:{self.listening_port}")
+            print(f"[UdpSocketProvider] 正在监听 {self._host}:{self.listening_port}")
             
             self._is_running = True
             self._thread = Thread(target=self._worker, daemon=True)

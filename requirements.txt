@@ -1,8 +1,10 @@
-PySide6
-pywin32
+PySide6==6.10.1
 pcapy-ng
 pydantic
 ipdb
 opencv-python
 numpy
 rapidocr-onnxruntime
+pyobjc-framework-Quartz; sys_platform == 'darwin'
+pyobjc-framework-Cocoa; sys_platform == 'darwin'
+pywin32; sys_platform == 'win32'

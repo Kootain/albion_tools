@@ -1,11 +1,17 @@
 import abc
 import numpy as np
-import win32gui
-import win32ui
-import win32con
-import win32api
+import platform
 import ctypes
 from typing import Optional, Tuple
+
+def is_windows():
+    return platform.system() == "Windows"
+
+if is_windows():
+    import win32gui
+    import win32ui
+    import win32con
+    import win32api
 
 class BaseCapture(abc.ABC):
     @abc.abstractmethod
@@ -21,12 +27,19 @@ class WindowCapture(BaseCapture):
     def __init__(self, window_title: str = None):
         self.window_title = window_title
         self.hwnd = None
-        if window_title:
-            self.hwnd = win32gui.FindWindow(None, window_title)
-            if not self.hwnd:
-                print(f"Window not found: {window_title}")
+        
+        if is_windows():
+            if window_title:
+                self.hwnd = win32gui.FindWindow(None, window_title)
+                if not self.hwnd:
+                    print(f"Window not found: {window_title}")
+        else:
+            print(f"WindowCapture not fully implemented for {platform.system()}")
 
     def capture(self) -> Optional[np.ndarray]:
+        if not is_windows():
+            return None
+
         if not self.hwnd:
             if self.window_title:
                  self.hwnd = win32gui.FindWindow(None, self.window_title)

@@ -1,9 +1,14 @@
 import ctypes
-from ctypes import wintypes
 from enum import IntEnum
 from dataclasses import dataclass
 from typing import List, Optional
+import platform
 
+def is_windows():
+    return platform.system() == "Windows"
+
+if is_windows():
+    from ctypes import wintypes
 
 class NetworkInterfaceType(IntEnum):
     # The interface type is not known.
@@ -73,38 +78,42 @@ class NetworkInterfaceInfo:
     type_string: str # 类型字符串
 
 # 2. 定义 Windows API 结构体
-class IP_ADAPTER_ADDRESSES(ctypes.Structure):
-    pass
+if is_windows():
+    class IP_ADAPTER_ADDRESSES(ctypes.Structure):
+        pass
 
-# 定义指针以便递归引用
-PIP_ADAPTER_ADDRESSES = ctypes.POINTER(IP_ADAPTER_ADDRESSES)
+    # 定义指针以便递归引用
+    PIP_ADAPTER_ADDRESSES = ctypes.POINTER(IP_ADAPTER_ADDRESSES)
 
-IP_ADAPTER_ADDRESSES._fields_ = [
-    ("Length", wintypes.ULONG),
-    ("IfIndex", wintypes.DWORD),
-    ("Next", PIP_ADAPTER_ADDRESSES),
-    ("AdapterName", ctypes.c_char_p),  # GUID 名称
-    ("FirstUnicastAddress", ctypes.c_void_p),
-    ("FirstAnycastAddress", ctypes.c_void_p),
-    ("FirstMulticastAddress", ctypes.c_void_p),
-    ("FirstDnsServerAddress", ctypes.c_void_p),
-    ("DnsSuffix", wintypes.LPCWSTR),
-    ("Description", wintypes.LPCWSTR), # 友好描述
-    ("FriendlyName", wintypes.LPCWSTR),# 友好名称 (如 "Wi-Fi")
-    ("PhysicalAddress", wintypes.BYTE * 8),
-    ("PhysicalAddressLength", wintypes.DWORD),
-    ("Flags", wintypes.DWORD),
-    ("Mtu", wintypes.DWORD),
-    ("IfType", wintypes.DWORD),        # <--- 这就是你要的 NetworkInterfaceType
-    ("OperStatus", wintypes.DWORD),
-    # 后面还有很多字段，但在 IfType 之后我们不需要定义了，
-    # 只要由操作系统分配足够的内存即可。
-]
+    IP_ADAPTER_ADDRESSES._fields_ = [
+        ("Length", wintypes.ULONG),
+        ("IfIndex", wintypes.DWORD),
+        ("Next", PIP_ADAPTER_ADDRESSES),
+        ("AdapterName", ctypes.c_char_p),  # GUID 名称
+        ("FirstUnicastAddress", ctypes.c_void_p),
+        ("FirstAnycastAddress", ctypes.c_void_p),
+        ("FirstMulticastAddress", ctypes.c_void_p),
+        ("FirstDnsServerAddress", ctypes.c_void_p),
+        ("DnsSuffix", wintypes.LPCWSTR),
+        ("Description", wintypes.LPCWSTR), # 友好描述
+        ("FriendlyName", wintypes.LPCWSTR),# 友好名称 (如 "Wi-Fi")
+        ("PhysicalAddress", wintypes.BYTE * 8),
+        ("PhysicalAddressLength", wintypes.DWORD),
+        ("Flags", wintypes.DWORD),
+        ("Mtu", wintypes.DWORD),
+        ("IfType", wintypes.DWORD),        # <--- 这就是你要的 NetworkInterfaceType
+        ("OperStatus", wintypes.DWORD),
+        # 后面还有很多字段，但在 IfType 之后我们不需要定义了，
+        # 只要由操作系统分配足够的内存即可。
+    ]
 
 def get_network_interface_types() -> List[NetworkInterfaceInfo]:
     """
     获取系统中所有网络接口的信息
     """
+    if not is_windows():
+        return []
+
     # 加载 iphlpapi.dll
     iphlpapi = ctypes.windll.iphlpapi
     
